@@ -23,3 +23,7 @@ void SglFacade::setContext(int id) {
 int SglFacade::getContext() {
 	return currentContextId;
 }
+
+float *SglFacade::getColorBufferPointer() {
+	return (*currentContext).getColorBufferPointer();
+}

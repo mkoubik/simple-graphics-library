@@ -79,7 +79,9 @@ int sglGetContext(void) {
 	return _sgl.getContext();
 }
 
-float *sglGetColorBufferPointer(void) {return 0;}
+float *sglGetColorBufferPointer(void) {
+	return _sgl.getColorBufferPointer();
+}
 
 //---------------------------------------------------------------------------
 // Drawing functions
