@@ -2,7 +2,7 @@
 INCLUDE = -I/usr/include -I/usr/X11R6/include -I. -I./sgl 
 LIBDIR = -L. -L/usr/X11R6/lib -L/usr/lib
 
-COMPILERFLAGS = -Wall -O2 -DUSE_GUI=1
+COMPILERFLAGS = -Wall -O2
 #-g 
 CC = g++
 CFLAGS = $(COMPILERFLAGS) $(INCLUDE) 

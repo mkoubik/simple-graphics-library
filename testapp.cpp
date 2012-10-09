@@ -7,7 +7,7 @@
 
 /// uncomment the tests you wish to run
 
-//#define TEST0
+#define TEST0
 #define TEST1
 //#define TEST2
 //#define TEST3
@@ -1162,6 +1162,7 @@ int main(int argc, char **argv)
   DrawTestScene0A();
   cout << "done in " << timer.UserTime() << " sec." << endl;
   totalTime += timer.UserTime();
+  WriteTGA("results/test0a.tga");
 #endif
 
 #ifdef TEST_0B
@@ -1173,6 +1174,7 @@ int main(int argc, char **argv)
   DrawTestScene0B();
   cout << "done in " << timer.UserTime() << " sec." << endl;
   totalTime += timer.UserTime();
+  WriteTGA("results/test0b.tga");
 #endif
 
 #ifdef TEST_1A
