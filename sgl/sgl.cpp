@@ -67,11 +67,17 @@ int sglCreateContext(int width, int height) {
 	return _sgl.createContext(width, height);
 }
 
-void sglDestroyContext(int id) {}
+void sglDestroyContext(int id) {
+	_sgl.destroyContext(id);
+}
 
-void sglSetContext(int id) {}
+void sglSetContext(int id) {
+	_sgl.setContext(id);
+}
 
-int sglGetContext(void) {return 0;}
+int sglGetContext(void) {
+	return _sgl.getContext();
+}
 
 float *sglGetColorBufferPointer(void) {return 0;}
 
