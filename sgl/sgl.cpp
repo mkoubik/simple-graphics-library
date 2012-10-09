@@ -7,6 +7,10 @@
 
 #include "sgl.h"
 
+#include "SglFacade.h"
+
+static SglFacade _sgl;
+
 /// Current error code.
 static sglEErrorCode _libStatus = SGL_NO_ERROR;
 
@@ -59,7 +63,9 @@ void sglInit(void) {}
 
 void sglFinish(void) {}
 
-int sglCreateContext(int width, int height) {return 0;}
+int sglCreateContext(int width, int height) {
+	return _sgl.createContext(width, height);
+}
 
 void sglDestroyContext(int id) {}
 
@@ -184,4 +190,3 @@ void sglEmissiveMaterial(
 						 const float c2
 						 )
 {}
-
