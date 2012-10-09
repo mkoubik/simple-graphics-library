@@ -16,6 +16,8 @@ public:
 	void setContext(int id);
 	int getContext();
 	float *getColorBufferPointer();
+	void clearColor(float r, float g, float b, float alpha);
+	void clear(unsigned what);
 };
 
 #endif /* __SGL_FACADE_H__ */

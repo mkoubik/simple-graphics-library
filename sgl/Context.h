@@ -14,9 +14,13 @@ private:
 	Color currentColor;
 	sglEElementType elementType;
 	std::vector<Point3> buffer;
+	Color clearColor;
 public:
 	Context(int w, int h);
 	float* getColorBufferPointer();
+	void setClearColor(Color color);
+	void clearColorBuffer();
+	void clearDepthBuffer();
 };
 
 #endif /* __CONTEXT_H__ */

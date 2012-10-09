@@ -1,6 +1,8 @@
 #include "SglFacade.h"
 
 #include "Context.h"
+#include "types.h"
+#include "sgl.h"
 
 SglFacade::SglFacade() {}
 
@@ -26,4 +28,21 @@ int SglFacade::getContext() {
 
 float *SglFacade::getColorBufferPointer() {
 	return (*currentContext).getColorBufferPointer();
+}
+
+void SglFacade::clearColor(float r, float g, float b, float alpha) {
+	Color color;
+	color.r = r;
+	color.g = g;
+	color.b = b;
+	(*currentContext).setClearColor(color);
+}
+
+void SglFacade::clear(unsigned what) {
+	if (what && SGL_COLOR_BUFFER_BIT) {
+		(*currentContext).clearColorBuffer();
+	}
+	if (what && SGL_DEPTH_BUFFER_BIT) {
+		(*currentContext).clearDepthBuffer();
+	}
 }

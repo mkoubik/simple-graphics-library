@@ -87,9 +87,13 @@ float *sglGetColorBufferPointer(void) {
 // Drawing functions
 //---------------------------------------------------------------------------
 
-void sglClearColor (float r, float g, float b, float alpha) {}
+void sglClearColor (float r, float g, float b, float alpha) {
+	_sgl.clearColor(r, g, b, alpha);
+}
 
-void sglClear(unsigned what) {}
+void sglClear(unsigned what) {
+	_sgl.clear(what);
+}
 
 void sglBegin(sglEElementType mode) {}
 
