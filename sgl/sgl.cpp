@@ -95,15 +95,23 @@ void sglClear(unsigned what) {
 	_sgl.clear(what);
 }
 
-void sglBegin(sglEElementType mode) {}
+void sglBegin(sglEElementType mode) {
+	_sgl.begin(mode);
+}
 
-void sglEnd(void) {}
+void sglEnd(void) {
+	_sgl.end();
+}
 
 void sglVertex4f(float x, float y, float z, float w) {}
 
-void sglVertex3f(float x, float y, float z) {}
+void sglVertex3f(float x, float y, float z) {
+	_sgl.vertex3f(x, y, z);
+}
 
-void sglVertex2f(float x, float y) {}
+void sglVertex2f(float x, float y) {
+	_sgl.vertex2f(x, y);
+}
 
 void sglCircle(float x, float y, float z, float radius) {}
 

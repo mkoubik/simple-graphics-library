@@ -46,3 +46,27 @@ void SglFacade::clear(unsigned what) {
 		(*currentContext).clearDepthBuffer();
 	}
 }
+
+void SglFacade::begin(sglEElementType mode) {
+	(*currentContext).setElementType(mode);
+}
+
+void SglFacade::end(void) {
+	(*currentContext).drawElements();
+}
+
+void SglFacade::vertex2f(float x, float y) {
+	Point3 vertex;
+	vertex.x = x;
+	vertex.y = y;
+	vertex.z = 0;
+	(*currentContext).addVertex(vertex);
+}
+
+void SglFacade::vertex3f(float x, float y, float z) {
+	Point3 vertex;
+	vertex.x = x;
+	vertex.y = y;
+	vertex.z = z;
+	(*currentContext).addVertex(vertex);
+}

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "Context.h"
+#include "sgl.h"
 
 class SglFacade {
 private:
@@ -18,6 +19,10 @@ public:
 	float *getColorBufferPointer();
 	void clearColor(float r, float g, float b, float alpha);
 	void clear(unsigned what);
+	void begin(sglEElementType mode);
+	void end(void);
+	void vertex2f(float x, float y);
+	void vertex3f(float x, float y, float z);
 };
 
 #endif /* __SGL_FACADE_H__ */

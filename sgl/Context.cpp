@@ -7,7 +7,6 @@ Context::Context(int w, int h) : width(w), height(h) {
 
 float* Context::getColorBufferPointer() {
 	return &(pixels[0].r);
-	// return (float*)pixels;
 }
 
 void Context::setClearColor(Color color) {
@@ -21,4 +20,15 @@ void Context::clearColorBuffer() {
 }
 
 void Context::clearDepthBuffer() {
+}
+
+void Context::setElementType(sglEElementType mode) {
+	elementType = mode;
+}
+
+void Context::drawElements() {
+}
+
+void Context::addVertex(Point3 vertex) {
+	vertexBuffer.push_back(vertex);
 }

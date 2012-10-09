@@ -10,17 +10,21 @@ private:
 	int width;
 	int height;
 	Color *pixels;
+
 	float pointSize;
 	Color currentColor;
-	sglEElementType elementType;
-	std::vector<Point3> buffer;
 	Color clearColor;
+	sglEElementType elementType;
+	std::vector<Point3> vertexBuffer;
 public:
 	Context(int w, int h);
 	float* getColorBufferPointer();
 	void setClearColor(Color color);
 	void clearColorBuffer();
 	void clearDepthBuffer();
+	void setElementType(sglEElementType mode);
+	void drawElements();
+	void addVertex(Point3 vertex);
 };
 
 #endif /* __CONTEXT_H__ */
