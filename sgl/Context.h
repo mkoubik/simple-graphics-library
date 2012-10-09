@@ -16,6 +16,8 @@ private:
 	Color clearColor;
 	sglEElementType elementType;
 	std::vector<Point3> vertexBuffer;
+
+	void drawPoints();
 public:
 	Context(int w, int h);
 	float* getColorBufferPointer();
@@ -25,6 +27,7 @@ public:
 	void setElementType(sglEElementType mode);
 	void drawElements();
 	void addVertex(Point3 vertex);
+	void setColor(Color color);
 };
 
 #endif /* __CONTEXT_H__ */

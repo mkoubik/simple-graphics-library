@@ -153,7 +153,9 @@ void sglViewport(int x, int y, int width, int height) {}
 // Attribute functions
 //---------------------------------------------------------------------------
 
-void sglColor3f(float r, float g, float b) {}
+void sglColor3f(float r, float g, float b) {
+	_sgl.color3f(r, g, b);
+}
 
 void sglAreaMode(sglEAreaMode mode) {}
 

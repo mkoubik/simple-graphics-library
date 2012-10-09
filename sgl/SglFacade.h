@@ -23,6 +23,7 @@ public:
 	void end(void);
 	void vertex2f(float x, float y);
 	void vertex3f(float x, float y, float z);
+	void color3f(float r, float g, float b);
 };
 
 #endif /* __SGL_FACADE_H__ */

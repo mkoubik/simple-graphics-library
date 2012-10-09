@@ -70,3 +70,11 @@ void SglFacade::vertex3f(float x, float y, float z) {
 	vertex.z = z;
 	(*currentContext).addVertex(vertex);
 }
+
+void SglFacade::color3f(float r, float g, float b) {
+	Color color;
+	color.r = r;
+	color.g = g;
+	color.b = b;
+	(*currentContext).setColor(color);
+}
