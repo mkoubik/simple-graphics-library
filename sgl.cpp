@@ -10,10 +10,6 @@
 
 using namespace std;
 
-sglContextManager *sglCM;
-int x_w, y_w;
-float z_w;
-
 bool sglBeginCalled = false;
 
 /// Current error code.
@@ -61,6 +57,9 @@ const char* sglGetErrorString(sglEErrorCode error)
 }
 
 /*------------------------------ MY VARIABLES ------------------------------*/
+sglContextManager *sglCM;
+int x_w, y_w;
+float z_w;
 
 // Hodnota 2 * PI
 const float M_2PI = (float)(2 * M_PI);
@@ -197,6 +196,12 @@ void sglClear(unsigned what)
 			break;
 		
 		case SGL_DEPTH_BUFFER_BIT:
+			sglCM->cc->clearDepthBuffer();
+			break;
+
+		case SGL_COLOR_BUFFER_BIT + SGL_DEPTH_BUFFER_BIT:
+			sglCM->cc->clearColorBuffer();
+			sglCM->cc->clearDepthBuffer();
 			break;
 		
 		default:
@@ -215,9 +220,6 @@ void sglBegin(sglEElementType mode)
 
 	sglBeginCalled = true;
 	sglCM->cc->elementType = mode;
-
-	if(!sglCM->cc->isMVP_matrixUpdated)
-		sglCM->cc->updateMVP_matrix();
 }
 
 void sglEnd(void)
@@ -235,7 +237,9 @@ void sglVertex4f(float x, float y, float z, float w)
 
 void sglVertex3f(float x, float y, float z)
 {
-	
+	sglCM->cc->transformationPipeline3D(x, y, z, x_w, y_w, z_w);
+
+	sglCM->cc->vertexBuffer.push_back(Vertex4f(x_w, y_w, z_w));
 }
 
 void sglVertex2f(float x, float y)
@@ -272,28 +276,74 @@ void sglCircle(float x, float y, float z, float radius)
 	int	dvey = 2 * radius_scaled - 2;
 	int	p = 1 - radius_scaled;
 
-	while(x_c <= y_c)
+	switch (sglCM->cc->areaMode)
 	{
-		sglCM->cc->setPixel( x_c + x_w,  y_c + y_w);
-		sglCM->cc->setPixel(-x_c + x_w,  y_c + y_w);
-		sglCM->cc->setPixel( y_c + x_w,  x_c + y_w);
-		sglCM->cc->setPixel(-y_c + x_w,  x_c + y_w);
-		sglCM->cc->setPixel( x_c + x_w, -y_c + y_w);
-		sglCM->cc->setPixel(-x_c + x_w, -y_c + y_w);
-		sglCM->cc->setPixel( y_c + x_w, -x_c + y_w);
-		sglCM->cc->setPixel(-y_c + x_w, -x_c + y_w);
-          
-		if(p > 0)
-		{
-			p = p - dvey;
-			dvey = dvey - 2;
-			y_c--;
-		}
+		case SGL_POINT:
+			break;
 
-		p += dvex;
-		dvex += 2;
-		x_c++;
+		case SGL_LINE:
+			sglCM->cc->elementType = SGL_POINTS;
+			sglCM->cc->pointSize = 1;
+
+			while(x_c <= y_c)
+			{
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( x_c + x_w,  y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-x_c + x_w,  y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( y_c + x_w,  x_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-y_c + x_w,  x_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( x_c + x_w, -y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-x_c + x_w, -y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( y_c + x_w, -x_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-y_c + x_w, -x_c + y_w));
+          
+				if(p > 0)
+				{
+					p = p - dvey;
+					dvey = dvey - 2;
+					y_c--;
+				}
+
+				p += dvex;
+				dvex += 2;
+				x_c++;
+			}
+
+			sglCM->cc->drawVertexBuffer();
+			break;
+
+		case SGL_FILL:
+			while(x_c <= y_c)
+			{
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( x_c + x_w,  y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-x_c + x_w,  y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( y_c + x_w,  x_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-y_c + x_w,  x_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( x_c + x_w, -y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-x_c + x_w, -y_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f( y_c + x_w, -x_c + y_w));
+				sglCM->cc->vertexBuffer.push_back(Vertex4f(-y_c + x_w, -x_c + y_w));
+
+				if(p > 0)
+				{
+					p = p - dvey;
+					dvey = dvey - 2;
+					y_c--;
+				}
+
+				p += dvex;
+				dvex += 2;
+				x_c++;
+			}
+
+			sglCM->cc->fillCircle();
+
+			break;
+
+		default:
+			exit(1);
+			break;
 	}
+
 }
 
 void sglEllipse(float x, float y, float z, float a, float b)
@@ -307,18 +357,46 @@ void sglEllipse(float x, float y, float z, float a, float b)
 	float x_e = a + x;
 	float y_e = y;
 
-	// Rozdeleni elipsy na pozadovany pocet segmentu a ulozeni jako SGL_LINE_LOOP
-	sglBegin(SGL_LINE_LOOP);
-		sglVertex2f(x_e, y_e);
+	switch (sglCM->cc->areaMode)
+	{
+		case SGL_POINT:
+			break;
 
-		for (int i = 1; i < ELLIPSE_SEGMENTS; i++)
-		{
-			x_e = ellipseCosTable[i] * a + x;
-			y_e = ellipseSinTable[i] * b + y;
+		case SGL_LINE:
+			// Rozdeleni elipsy na pozadovany pocet segmentu a ulozeni jako SGL_LINE_LOOP
+			sglBegin(SGL_LINE_LOOP);
+				sglVertex2f(x_e, y_e);
 
-			sglVertex2f(x_e, y_e);
-		}
-	sglEnd();
+				for (int i = 1; i < ELLIPSE_SEGMENTS; i++)
+				{
+					x_e = ellipseCosTable[i] * a + x;
+					y_e = ellipseSinTable[i] * b + y;
+
+					sglVertex2f(x_e, y_e);
+				}
+			sglEnd();
+			break;
+
+		case SGL_FILL:
+			// Vykresleni elipsy jako SGL_POLYGON
+			sglBegin(SGL_POLYGON);
+				sglVertex2f(x_e, y_e);
+
+				for (int i = 1; i < ELLIPSE_SEGMENTS; i++)
+				{
+					x_e = ellipseCosTable[i] * a + x;
+					y_e = ellipseSinTable[i] * b + y;
+
+					sglVertex2f(x_e, y_e);
+				}
+			sglEnd();
+
+			break;
+
+		default:
+			exit(1);
+			break;
+	}
 }
 
 void sglArc(float x, float y, float z, float radius, float from, float to)
@@ -334,19 +412,50 @@ void sglArc(float x, float y, float z, float radius, float from, float to)
 	float x_a = cosf(angle) * radius + x;
 	float y_a = sinf(angle) * radius + y;
 
-	// Rozdeleni oblouku na odpovidajici pocet segmentu a ulozeni jako SGL_LINE_STRIP
-	sglBegin(SGL_LINE_STRIP);
-		sglVertex2f(x_a, y_a);
+	switch (sglCM->cc->areaMode)
+	{
+		case SGL_POINT:
+			break;
 
-		for (int i = 1; i < numSegment; i++)
-		{			
-			angle += d_angle;
-			x_a = cosf(angle) * radius + x;
-			y_a = sinf(angle) * radius + y;
+		case SGL_LINE:
+			// Rozdeleni oblouku na odpovidajici pocet segmentu a ulozeni jako SGL_LINE_STRIP
+			sglBegin(SGL_LINE_STRIP);
+				sglVertex2f(x_a, y_a);
 
-			sglVertex2f(x_a, y_a);
-		}
-	sglEnd();
+				for (int i = 1; i < numSegment; i++)
+				{			
+					angle += d_angle;
+					x_a = cosf(angle) * radius + x;
+					y_a = sinf(angle) * radius + y;
+
+					sglVertex2f(x_a, y_a);
+				}
+			sglEnd();
+			break;
+
+		case SGL_FILL:
+			// Vykresleni oblouku jako SGL_POLYGON
+			sglBegin(SGL_POLYGON);
+				sglVertex2f(x_a, y_a);
+
+				for (int i = 1; i < numSegment; i++)
+				{			
+					angle += d_angle;
+					x_a = cosf(angle) * radius + x;
+					y_a = sinf(angle) * radius + y;
+
+					sglVertex2f(x_a, y_a);
+				}
+
+				sglVertex2f(x, y);
+			sglEnd();
+			break;
+
+		default:
+			exit(1);
+			break;
+	}
+
 }
 
 //---------------------------------------------------------------------------
@@ -410,7 +519,7 @@ void sglPopMatrix(void)
 
 	sglCM->cc->transformationBuffer.pop();
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglLoadIdentity(void)
@@ -431,7 +540,7 @@ void sglLoadIdentity(void)
 	sglCM->cc->matrix->values[2][2] = 1.0f;
 	sglCM->cc->matrix->values[3][3] = 1.0f;
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglLoadMatrix(const float *matrix)
@@ -439,15 +548,9 @@ void sglLoadMatrix(const float *matrix)
 	if(sglCM->cc == NULL || sglBeginCalled == true)
 		setErrCode(SGL_INVALID_OPERATION);
 
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			sglCM->cc->matrix->values[i][j] = matrix[i + 4 * j];
-		}
-	}
+	sglCM->cc->matrix->loadMatrix4f(matrix);
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglMultMatrix(const float *matrix)
@@ -459,7 +562,7 @@ void sglMultMatrix(const float *matrix)
 
 	*sglCM->cc->matrix = temp * matrix;
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglTranslate(float x, float y, float z)
@@ -475,7 +578,7 @@ void sglTranslate(float x, float y, float z)
 										+ sglCM->cc->matrix->values[i][3];		
 	}
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglScale(float scalex, float scaley, float scalez)
@@ -490,7 +593,7 @@ void sglScale(float scalex, float scaley, float scalez)
 		sglCM->cc->matrix->values[i][2] *= scalez;
 	}
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglRotate2D(float angle, float centerx, float centery)
@@ -514,13 +617,34 @@ void sglRotate2D(float angle, float centerx, float centery)
 										+  temp.values[i][3];		
 	}
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglRotateY(float angle)
 {
 	if(sglCM->cc == NULL || sglBeginCalled == true)
 		setErrCode(SGL_INVALID_OPERATION);
+
+	float coeff1 = cosf(angle);
+	float coeff2 = sinf(angle);
+	float coeff3 = -sinf(angle);
+
+	float values[4][4];
+
+	// Soucin aktualni matice kontextu matrixCurrent a matice rotace podle osy Y
+	for (int i = 0; i < 4; i++)
+	{
+		values[i][0] = sglCM->cc->matrix->values[i][0] * coeff1
+					 + sglCM->cc->matrix->values[i][2] * coeff2;
+		values[i][1] = sglCM->cc->matrix->values[i][1];
+		values[i][2] = sglCM->cc->matrix->values[i][0] * coeff3 
+					 + sglCM->cc->matrix->values[i][2] * coeff1;
+		values[i][3] = sglCM->cc->matrix->values[i][3];	
+	}
+	
+	memcpy(sglCM->cc->matrix->values, values, sizeof(values));
+
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglOrtho(float left, float right, float bottom, float top, float near, float far)
@@ -547,14 +671,28 @@ void sglOrtho(float left, float right, float bottom, float top, float near, floa
 										  temp.values[i][3];		
 	}
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglFrustum(float left, float right, float bottom, float top, float near, float far)
 {
+	float coeff1 = (2.0f * near) / (right - left);
+	float coeff2 = (right + left) / (right - left);
+	float coeff3 = (2.0f * near) / (top - bottom);
+	float coeff4 = (top + bottom) / (top - bottom);
+	float coeff5 = -(far + near) / (far - near);
+	float coeff6 = -2.0f * (far * near) / (far - near);
 
+	float values[4][4] = {
+							{coeff1,     0.0f,   coeff2,     0.0f},
+							{  0.0f,   coeff3,   coeff4,     0.0f},
+							{  0.0f,     0.0f,   coeff5,   coeff6},
+							{  0.0f,     0.0f,    -1.0f,     0.0f}
+						 };
 
-	sglCM->cc->isMVP_matrixUpdated = false;
+	memcpy(sglCM->cc->matrix->values, values, sizeof(values));
+
+	sglCM->cc->MVP_matrixUpdated = false;
 }
 
 void sglViewport(int x, int y, int width, int height)
@@ -595,9 +733,27 @@ void sglPointSize(float size)
 	sglCM->cc->pointSize = (int)size;
 }
 
-void sglEnable(sglEEnableFlags cap) {}
+void sglEnable(sglEEnableFlags cap) 
+{
+	if(sglCM->cc == NULL || sglBeginCalled == true)
+		setErrCode(SGL_INVALID_OPERATION);
 
-void sglDisable(sglEEnableFlags cap) {}
+	if(cap == SGL_DEPTH_TEST)
+		sglCM->cc->depthTestEnabled = true;
+	else
+		setErrCode(SGL_INVALID_ENUM);
+}
+
+void sglDisable(sglEEnableFlags cap) 
+{
+	if(sglCM->cc == NULL || sglBeginCalled == true)
+		setErrCode(SGL_INVALID_OPERATION);
+
+	if(cap == SGL_DEPTH_TEST)
+		sglCM->cc->depthTestEnabled = false;
+	else
+		setErrCode(SGL_INVALID_ENUM);
+}
 
 //---------------------------------------------------------------------------
 // RayTracing oriented functions

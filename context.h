@@ -6,9 +6,16 @@
 //---------------------------------------------------------------------------
 
 #define _USE_MATH_DEFINES
+
+#include <float.h>
+#include <limits.h>
 #include <math.h>
-#include <vector>
+#include <stdlib.h>
+#include <string.h>
+
+#include <map>
 #include <stack>
+#include <vector>
 
 using namespace std;
 
@@ -42,12 +49,56 @@ class Color
 		}
 };
 
+class Edge
+{
+	public:
+		float x;				// Aktualni souradnice X pruseciku s rozkladovym radkem
+		float d_x;				// Prirustek v ose X pri prechodu na dalsi radek
+		int d_y;				// Pocet radku, do nichz hrana zasahuje
+		float z;				// Souradnice osy Z pro pocatek hrany
+		float d_z;				// Prirustek v ose Z pri prechodu na dalsi radek
+
+		/*
+		 * Konstruktor
+		 *
+		 * @param x - aktualni souradnice x pruseciku s rozkladovym radkem
+		 * @param d_x - prirustek x pri prechodu na dalsi radek
+		 * @param d_y - pocet radku, do nichz hrana zasahuje
+		 *
+		 */
+		Edge(float x, float d_x, int d_y)
+		{
+			this->x = x;
+			this->d_x = d_x;
+			this->d_y = d_y;
+		}
+
+		/*
+		 * Konstruktor
+		 *
+		 * @param x - aktualni souradnice x pruseciku s rozkladovym radkem
+		 * @param d_x - prirustek x pri prechodu na dalsi radek
+		 * @param d_y - pocet radku, do nichz hrana zasahuje
+		 * @param z - 
+		 * @param d_z - 
+		 *
+		 */
+		Edge(float x, float d_x, int d_y, float z, float d_z)
+		{
+			this->x = x;
+			this->d_x = d_x;
+			this->d_y = d_y;
+			this->z = z;
+			this->d_z= d_z;
+		}
+};
+
 class Vector4f
 {
 	public:
 		float x, y, z, w;
 
-		Vector4f()
+		Vector4f(void)
 		{
 		}
 
@@ -60,26 +111,42 @@ class Vector4f
 		}
 };
 
-
-
 class Matrix4f
 {
-		public:
-		float values[4][4];		// Dvourozmerne pole reprezentujici hodnoty matice
+	public:
+		float values[4][4];
 
-		/*
-		 * Konstruktor
-		 *
-		 */
-		Matrix4f()
+		Matrix4f(void)
 		{
 			for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{					
-						this->values[i][j] = 0.0f;
-					}
+			{
+				for (int j = 0; j < 4; j++)
+				{					
+					this->values[i][j] = 0.0f;
 				}
+			}
+		}
+
+		void loadMatrix4f(const float *matrix)
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					values[i][j] = matrix[i + 4 * j];
+				}
+			}
+		}
+
+		void loadMatrix4f(const float matrix[4][4])
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					values[i][j] = matrix[i][j];
+				}
+			}
 		}
 
 		Matrix4f operator * (const float* matrixArray)
@@ -117,17 +184,6 @@ class Matrix4f
 
 			return result;
 		}
-
-	/*
-	public:
-		static int const MATRIX_SIZE = 16;
-
-		float values [16];
-
-		Matrix4f()
-		{
-		}
-	*/
 };
 
 class Vertex4f
@@ -178,122 +234,507 @@ Vector4f operator * (const Matrix4f &matrix, const Vector4f &v)
 
 class sglContext
 {
-	inline void drawPoint(const Vertex4f &u)
-	{
-		int offset = int(pointSize / 2);
+	private:
+		map <int, vector <Edge*> > tableEdges;
+		vector <Edge*> listActualEdges;
 
-		for(int i = u.y - offset; i <= u.y + offset; i++)
+		inline void drawPoint(const Vertex4f &u)
 		{
-			for(int j = u.x - offset; j <= u.x + offset; j++)
+			// Vykresleni bodu dle zadane hodnoty pointSize, kde hodnoty x, y jsou brany
+			// jako "stred" bodu a dle vypocteneho offsetu, je tento stred "obalen" dalsimi
+			// body
+			int offset = int(pointSize / 2);
+
+			for(int i = u.y - offset; i <= u.y + offset; i++)
 			{
-				setPixel(j, i);
+				for(int j = u.x - offset; j <= u.x + offset; j++)
+				{
+					setPixel(j, i);
+				}
 			}
+
+			setPixel(u.x, u.y);
 		}
 
-		setPixel(u.x, u.y);
-	}
-
-	inline void drawLine(Vertex4f u, Vertex4f v)
-	{
-		int x, d_x, y, d_y, k1, k2, p, increase;
-		float m;
-
-		d_x = v.x - u.x;
-		d_y = v.y - u.y;
-
-		m = (float)d_y / d_x;
-
-		if(fabs(m) <= 1.0f)
+		inline void drawLine(Vertex4f u, Vertex4f v)
 		{
-			if(d_x < 0)
-			{
-				Vertex4f temp = u;
-				u = v;
-				v = temp;
-								
-				d_x *= -1;
-				d_y *= -1;
-			}
+			int x, d_x, y, d_y, k1, k2, p, step;
+			float m;
 
-			if(d_y < 0)
+			d_x = v.x - u.x;
+			d_y = v.y - u.y;
+
+			m = (float)d_y / d_x;
+		
+			// Pokud se nejedna o vodorovnou nebo svislou usecku
+			if (d_x != 0 && d_y != 0)
 			{
-				increase = -1;
-				k1 = -2 * d_y;
-				k2 = 2 * (-d_y - d_x);
+				// Ridici osou je osa X
+				if(fabs(m) <= 1.0f)
+				{
+					// Pokud nutno, prohozeni pocatecniho a koncoveho bodu z duvodu
+					// vzorkovani zlevo doprava
+					if(d_x < 0)
+					{
+						Vertex4f temp = u;
+						u = v;
+						v = temp;
+								
+						d_x = -d_x;
+						d_y = -d_y;
+					}
+
+					// Podle hodnot bodu na ose Y menime krok - zda budeme pricitat,
+					// nebo odcitat
+					if(d_y < 0)
+					{
+						step = -1;
+						d_y = -d_y;
+					}
+					else
+					{
+						step = 1;
+					}
+
+					// Pocatecni nastaveni konstant
+					k1 = 2 * d_y;
+					k2 = 2 * (d_y - d_x);
+
+					p = 2 * d_y - d_x;
+					x = u.x;
+					y = u.y;
+
+					setPixel(x, y);
+
+					while(x < v.x)
+					{
+						x++;
+						if(p >= 0)
+						{
+							y += step;
+							p += k2;
+						}
+						else
+						{
+							p += k1;
+						}
+
+						setPixel(x, y);
+					}
+				}
+				// Ridici osou je osa Y
+				else
+				{
+					// Pokud nutno, prohozeni pocatecniho a koncoveho bodu z duvodu
+					// vzorkovani zdola nahoru
+					if(d_y < 0)
+					{
+						Vertex4f temp = u;
+						u = v;
+						v = temp;
+								
+						d_x *= -1;
+						d_y *= -1;
+					}
+
+					// Podle hodnot bodu na ose X menime krok - zda budeme pricitat,
+					// nebo odcitat
+					if(d_x < 0)
+					{
+						step = -1;
+						d_x = -d_x;
+					}
+					else
+					{
+						step = 1;
+					}
+
+					// Pocatecni nastaveni konstant
+					k1 = 2 * d_x;
+					k2 = 2 * (d_x - d_y);
+
+					p = 2 * d_x - d_y;
+					x = u.x;
+					y = u.y;
+
+					setPixel(x, y);
+
+					while(y < v.y)
+					{
+						y++;
+						if(p >= 0)
+						{
+							x += step;
+							p += k2;
+						}
+						else
+						{
+							p += k1;
+						}
+
+						setPixel(x, y);
+					}
+				}
 			}
 			else
 			{
-				increase = 1;
-				k1 = 2 * d_y;
-				k2 = 2 * (d_y - d_x);
-			}
-
-			p = 2 * d_y - d_x;
-			x = u.x;
-			y = u.y;
-
-			while(x < v.x)
-			{
-				setPixel(x, y);
-
-				x++;
-				if(p >= 0)
+				// Jedna se o svislou usecku
+				if(d_x == 0)
 				{
-					y += increase;
-					p += k2;
+					if(u.y > v.y)
+					{
+						Vertex4f temp = u;
+						u = v;
+						v = temp;
+					}
+
+					while(u.y < v.y)
+					{
+						setPixel(u.x, u.y);
+						u.y++;
+					}
 				}
+				// Jedna se o vodorovnou usecku
 				else
 				{
-					p += k1;
+					if(u.x > v.x)
+					{
+						Vertex4f temp = u;
+						u = v;
+						v = temp;
+					}
+
+					while(u.x < v.x)
+					{
+						setPixel(u.x, u.y);
+						u.x++;
+					}
 				}
 			}
 		}
-		else
-		{
-			if(d_y < 0)
-			{
-				Vertex4f temp = u;
-				u = v;
-				v = temp;
-								
-				d_x *= -1;
-				d_y *= -1;
-			}
 
-			if(d_x < 0)
+		inline void drawFillingLine(Vertex4f u, Vertex4f v)
+		{
+			// Vodorovna usecka //
+			int index = u.x + u.y * width;
+			if(u.x < v.x)
 			{
-				increase = -1;
-				k1 = -2 * d_x;
-				k2 = 2 * (-d_x - d_y);
+				while(u.x < v.x)
+				{
+					colorBuffer[index] = color;
+
+					u.x++;
+					index++;
+				}
 			}
 			else
 			{
-				increase = 1;
-				k1 = 2 * d_x;
-				k2 = 2 * (d_x - d_y);
-			}
-
-			p = 2 * d_x - d_y;
-			x = u.x;
-			y = u.y;
-
-			while(y < v.y)
-			{
-				setPixel(x, y);
-
-				y++;
-				if(p >= 0)
+				while(v.x < u.x)
 				{
-					x += increase;
-					p += k2;
-				}
-				else
-				{
-					p += k1;
+					colorBuffer[index] = color;
+
+					u.x--;
+					index--;
 				}
 			}
 		}
-	}
+
+		inline void drawFillingLine(Vertex4f u, Vertex4f v, float depth, float depthStep)
+		{
+			// Vodorovna usecka //
+			int index = u.x + u.y * width;
+			if(u.x < v.x)
+			{
+				while(u.x < v.x)
+				{
+					if (depth > depthBuffer[index])
+					{
+						colorBuffer[index] = color;
+						depthBuffer[index] = depth;
+					}
+
+					depth += depthStep;
+					u.x++;
+					index++;
+				}
+			}
+			else
+			{
+				while(v.x < u.x)
+				{
+					if (depth > depthBuffer[index])
+					{
+						colorBuffer[index] = color;
+						depthBuffer[index] = depth;
+					}
+					depth += depthStep;
+					u.x--;
+					index--;
+				}
+			}
+		}
+
+		inline void addEdge(Vertex4f u, Vertex4f v)
+		{
+			float d_x, d_y, d_z, smernice, d_xe, d_ze;
+
+			if(depthTestEnabled)
+			{				// Pokud treba -> prohozeni bodu tak, aby platila orientace smerem shora dolu //
+				if(u.y < v.y)
+				{
+					Vertex4f temp = u;
+					u = v;
+					v = temp;
+				}
+
+				// Vypocet deltaX, deltaY a deltaZ //
+				d_x = (float)(v.x - u.x);
+				d_y = (float)(v.y - u.y);
+				d_z = v.z - u.z;
+
+				// Pokud deltaY = 0 -> vodorovna usecka -> nevykreslujeme //
+				if(d_y != 0.0f)
+				{
+					// Pokud deltaX = 0 -> svisla usecka -> pristek X pri prechodu na dalsi radek = 0 //
+					if(d_x == 0)
+					{
+						d_xe = 0.0f;
+					}
+					// Jinak vypocet smernice -> pristek X pri prechodu na dalsi radek = jeji prevracena hodnota //
+					else
+					{
+						smernice = d_y / d_x;
+						d_xe = -1 / smernice;
+					}
+
+					if(d_z == 0.0f)
+						d_ze = 0.0f;
+					else
+						d_ze = d_z / fabs(d_y);
+
+					// Zapis nove hrany do seznamu hran podle hodnoty y1 //
+					tableEdges[u.y].push_back(new Edge((float)u.x, d_xe, u.y - v.y - 1, u.z, d_ze));
+				}
+			}
+			else
+			{
+				// Pokud treba -> prohozeni bodu tak, aby platila orientace smerem shora dolu //
+				if(u.y < v.y)
+				{
+					Vertex4f temp = u;
+					u = v;
+					v = temp;
+				}
+
+				// Vypocet deltaX a deltaY //
+				d_x = (float)(v.x - u.x);
+				d_y = (float)(v.y - u.y);
+
+				// Pokud deltaY = 0 -> vodorovna usecka -> nevykreslujeme //
+				if(d_y != 0.0f)
+				{
+					// Pokud deltaX = 0 -> svisla usecka -> pristek X pri prechodu na dalsi radek = 0 //
+					if(d_x == 0)
+					{
+						d_xe = 0.0f;
+					}
+					// Jinak vypocet smernice -> pristek X pri prechodu na dalsi radek = jeji prevracena hodnota //
+					else
+					{
+						smernice = d_y / d_x;
+						d_xe = -1 / smernice;
+					}
+					// Zapis nove hrany do seznamu hran podle hodnoty y1 //
+					tableEdges[u.y].push_back(new Edge((float)u.x, d_xe, u.y - v.y - 1));
+				}
+			}
+		}
+
+		inline void createEdges(void)
+		{
+			size_t i = 0, size = vertexBuffer.size() - 1;
+			Vertex4f u, v;
+
+			while(i < size)
+			{
+				u = vertexBuffer[i++];
+				v = vertexBuffer[i];
+
+				addEdge(u, v);
+			}
+
+			addEdge(v, vertexBuffer[0]);
+		}
+
+		inline void fillElement(void)
+		{
+			int x1, x2;
+			float z1, z2, d_z, depthStep;
+
+			int y;																	// Aktualni hodnota y radkoveho vyplnovani
+			int y_next;																// Nasledujici nejblizsi hodnota y, kdy se pridaji dalsi hrany do seznamu aktualnich hran
+			bool sorted;															// Rozhoduje, zda je seznam hran jiz serazen -> isSorted = true (urychleni razeni)
+			map<int, vector <Edge*> >::reverse_iterator it = tableEdges.rbegin();	// Iterator ukazujici na konec tabulky tableEdges (prochazime od nejvyssi hodnoty y)
+
+			y = it->first;															// y = nejvyssi hodnota y z tabulky tableEdges
+			listActualEdges = tableEdges[y];										// Nahrani hran z nejvyssiho radku tabulky tableEdges do seznamu aktualnich hran listActualEdges
+			tableEdges.erase(y);													// Odstraneni hran z tabulky listActualEdges
+	
+			// Pokud neni tabulka prazdna -> y_next = hodnota y, na ktere budeme pridavat dalsi hrany do listActualEdges //
+			if(!tableEdges.empty())
+			{
+				y_next = it->first;
+			}
+			// Jinak nastavime na nejmensi moznou hodnotu -> 0 //
+			else
+			{
+				y_next = 0;
+			}
+
+			// Prochazime tak dlouho, dokud neni prazdna jak tabulka tableEdges, tak seznam listActualEdges //
+			while(!tableEdges.empty() || !listActualEdges.empty())
+			{
+				// Pokud jsme na radku s novymi hranami, musime je nahrat do seznamu listActualEdges//
+				if(y == y_next)
+				{
+					listActualEdges.insert(listActualEdges.end(), 
+					tableEdges[y].begin(), tableEdges[y].end());					// Nahrani hran z aktualne nejvyssiho radku tabulky tableEdges na konec seznamu aktualnich hran listActualEdges
+					tableEdges.erase(y);											// Odstraneni hran z tabulky listActualEdges
+
+					// Pokud neni tabulka prazdna -> y_next = hodnota y, na ktere budeme pridavat dalsi hrany do listActualEdges //
+					if(!tableEdges.empty())
+					{
+						y_next = it->first;
+					}
+				}
+
+				Edge* temp;
+				// SHAKER SORT //
+				/*
+				int size = listActualEdges.size();
+				for(int i = 0; i < size / 2; i++)
+				{
+					isSorted = true;
+					for(int j = i; j < size - i - 1; j++)
+					{
+						if(listActualEdges[j]->x < listActualEdges[j + 1]->x)
+						{
+							temp = listActualEdges[j];
+							listActualEdges[j] = listActualEdges[j + 1];
+							listActualEdges[j + 1] = temp;
+							isSorted = false;
+						}
+					}
+			
+					for(int j = size - 2 - i; j > i; j--)
+					{
+						if(listActualEdges[j]->x > listActualEdges[j - 1]->x)
+						{
+							temp = listActualEdges[j];
+							listActualEdges[j] = listActualEdges[j - 1];
+							listActualEdges[j - 1] = temp;
+							isSorted = false;
+						}
+					}
+
+					if(isSorted) break;
+				}
+				*/
+
+				// BUBBLE SORT //
+				for (int i = (listActualEdges.size() - 1); i > 0; i--)
+				{
+					sorted = true;
+					for (int j = 1; j <= i; j++)
+					{
+						if (listActualEdges[j-1]->x > listActualEdges[j]->x)
+						{
+							sorted = false;
+							temp = listActualEdges[j-1];
+							listActualEdges[j-1] = listActualEdges[j];
+							listActualEdges[j] = temp;
+						}
+					}
+					// Pokud v pruchodu celym seznam nezmenime pozici ani jednoho prvku -> seznam serazen -> muzeme koncit
+					if(sorted)
+						break;
+				}
+
+				if (depthTestEnabled)
+				{
+					// Vyplneni elementu na aktualnim radku y (usecku vzdy vykreslime mezi sudym a lichym prvkem) se zohlednenim hloubky //
+					for(unsigned int i = 0; i < listActualEdges.size(); i++)
+					{				
+						x1 = round(listActualEdges[i]->x);
+						z1 = listActualEdges[i]->z;
+
+						x2 = round(listActualEdges[++i]->x);
+						z2 = listActualEdges[i]->z;
+
+						d_z = z2 - z1;
+
+						if (d_z == 0.0f)
+							depthStep = 0.0f;
+						else
+							depthStep =  d_z / (x2 - x1);
+
+						drawFillingLine(Vertex4f(x1, y), Vertex4f(x2, y), z1, depthStep);
+						//drawLine(x1, y, x2, y, z1, depthStep);
+					}
+
+					unsigned int i = 0;
+					// Prochazime cely seznam listActualEdges a aktualizujeme hodnoty jeho prvku, popr. odstranujeme //
+					while(i < listActualEdges.size())
+					{
+						// Pokud se pocet radku, do nichz hrana zasahuje = 0 -> odstraneni hrany ze seznamu //
+						if(listActualEdges[i]->d_y == 0)
+						{
+							delete listActualEdges[i];
+							listActualEdges.erase(listActualEdges.begin() + i);
+						}
+						// Jinak aktualizujeme hodnotu zbyvajicich hran //
+						else
+						{
+							listActualEdges[i]->d_y--;
+							listActualEdges[i]->x += listActualEdges[i]->d_x;
+							listActualEdges[i]->z += listActualEdges[i]->d_z;
+							i++;
+						}
+					}
+				}
+				else
+				{
+					// Vyplneni elementu na aktualnim radku y (usecku vzdy vykreslime mezi sudym a lichym prvkem) //
+					for(unsigned int i = 0; i < listActualEdges.size(); i++)
+					{
+						x1 = round(listActualEdges[i]->x);
+						x2 = round(listActualEdges[++i]->x);
+						drawFillingLine(Vertex4f(x1, y), Vertex4f(x2, y));
+					}
+
+					unsigned int i = 0;
+					// Prochazime cely seznam listActualEdges a aktualizujeme hodnoty jeho prvku, popr. odstranujeme //
+					while(i < listActualEdges.size())
+					{
+						// Pokud se pocet radku, do nichz hrana zasahuje = 0 -> odstraneni hrany ze seznamu //
+						if(listActualEdges[i]->d_y == 0)
+						{
+							delete listActualEdges[i];
+							listActualEdges.erase(listActualEdges.begin() + i);
+						}
+						// Jinak aktualizujeme hodnotu zbyvajicich hran //
+						else
+						{
+							listActualEdges[i]->d_y--;
+							listActualEdges[i]->x += listActualEdges[i]->d_x;
+							i++;
+						}
+					}
+				}
+
+				y--;
+			}
+		}
 
 	public:
 		static unsigned int const MAX_NUM_MATRICES = 32;
@@ -306,7 +747,7 @@ class sglContext
 		Color clearColor, color;
 
 		// TRANSFORMATION
-		bool isMVP_matrixUpdated;
+		bool MVP_matrixUpdated;
 		sglEMatrixMode matrixMode;
 		Matrix4f *matrix;
 		Matrix4f MV_matrix, P_matrix, MVP_matrix;
@@ -318,18 +759,27 @@ class sglContext
 
 		sglEAreaMode areaMode;
 
+		float *depthBuffer;
+		bool depthTestEnabled;
+
 		sglContext(const int &_height, const int &_width)
 		{
 			height = _height;
 			width = _width;
 			colorBuffer = new Color[height * width];
 			matrix = NULL;
-			isMVP_matrixUpdated = false;
+			MVP_matrixUpdated = false;
+
+			depthBuffer = new float [height * width];
+
+			depthTestEnabled = false;
 		}
 
 		~sglContext(void)
 		{
 			delete [] colorBuffer;
+
+			delete [] depthBuffer;
 		}
 
 		inline void setPixel(const int &x, const int &y)
@@ -347,8 +797,20 @@ class sglContext
 			}
 		}
 
+		void clearDepthBuffer(void)
+		{
+			int dimension = height * width;
+			for(int i = 0; i < dimension; i++)
+			{
+				depthBuffer[i] = -FLT_MAX;
+			}
+		}
+
 		inline void transformationPipeline2D(const float &x, const float &y, int &x_w,  int &y_w)
 		{
+			if(!MVP_matrixUpdated)
+				updateMVP_matrix();
+
 			// MVP TRANSFORMATION
 			Vector4f NDC = MVP_matrix * Vector4f(x, y);
 
@@ -359,13 +821,16 @@ class sglContext
 
 		inline void transformationPipeline3D(const float &x, const float &y, const float &z, int &x_w,  int &y_w, float &z_w)
 		{
+			if(!MVP_matrixUpdated)
+				updateMVP_matrix();
+
 			float w_n = 1.0f;
 
 			// MVP TRANSFORMATION
 			Vector4f NDC = MVP_matrix * Vector4f(x, y, z, w_n);
 
 			// PERSPECTIVE DIVISION
-			w_n = 1.0f / w_n;
+			w_n = 1.0f / NDC.w;
 
 			NDC.x *= w_n;
 			NDC.y *= w_n;
@@ -433,6 +898,35 @@ class sglContext
 					break;
 				
 				case SGL_POLYGON:
+					switch (areaMode)
+					{
+						case SGL_POINT:
+							break;
+
+						case SGL_LINE:
+							while(i < size)
+							{
+								u = vertexBuffer[i++];
+								v = vertexBuffer[i];
+
+								drawLine(u, v);
+							}
+
+							drawLine(v, vertexBuffer[0]);
+
+							break;
+
+						case SGL_FILL:
+							createEdges();
+							fillElement();
+
+							break;
+
+						default:
+							exit(1);
+							break;
+					}
+
 					break;
 
 				default:
@@ -442,11 +936,27 @@ class sglContext
 			vertexBuffer.clear();
 		}
 
+		inline void fillCircle(void)
+		{
+			Vertex4f u, v;
+			size_t i = 0;
+
+			while(i < vertexBuffer.size())
+			{
+				u = vertexBuffer[i++];
+				v = vertexBuffer[i++];
+
+				drawLine(u, v);
+			}
+
+			vertexBuffer.clear();
+		}
+
 		inline void updateMVP_matrix()
 		{
 			MVP_matrix = P_matrix * MV_matrix;
 
-			isMVP_matrixUpdated = true;
+			MVP_matrixUpdated = true;
 		}
 };
 
