@@ -228,6 +228,7 @@ void sglEnd(void)
 		setErrCode(SGL_INVALID_OPERATION);
 
 	sglCM->cc->drawVertexBuffer();
+	sglBeginCalled = false;
 }
 
 void sglVertex4f(float x, float y, float z, float w)
@@ -499,7 +500,7 @@ void sglPushMatrix(void)
 
 void sglPopMatrix(void)
 {
-	if(sglCM->cc->transformationBuffer.size() == 1)
+	if(sglCM->cc->transformationBuffer.size() == 0)
 		setErrCode(SGL_STACK_UNDERFLOW);
 
 	if(sglCM->cc == NULL || sglBeginCalled == true)
