@@ -95,6 +95,22 @@ class Vector4f
 			z = _z;
 			w = _w;
 		}
+
+		// skalarni soucin
+		float dotProduct(const Vector4f &vector)
+		{
+			return x * vector.x + y * vector.y + z * vector.z;
+		}
+
+		// vektorovy soucin
+		Vector4f crossProduct(const Vector4f &vector)
+		{
+			Vector4f result;
+			result.x = y * vector.z - z * vector.y;
+			result.y = z * vector.x - x * vector.z;
+			result.z = x * vector.y - y * vector.x;
+			return result;
+		}
 };
 
 Vector4f operator - (const Vector4f &v1, const Vector4f &v2)
@@ -346,6 +362,11 @@ class Vertex4f
 			return result;
 		}
 };
+
+Vector4f operator - (const Vector4f &v1, const Vertex4f &v2)
+{
+	return Vector4f(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
+}
 
 Vector4f operator * (const Matrix4f &matrix, const Vector4f &v)
 {
