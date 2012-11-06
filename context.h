@@ -30,7 +30,9 @@ class sglContext
 	private:
 		map <int, vector <Edge*> > tableEdges;
 		vector <Edge*> listActualEdges;
+		Raytracer *raytracer;
 
+		bool sceneDefinition;
 
 		inline void drawPoint(const Vertex4f &u)
 		{
@@ -692,33 +694,38 @@ class sglContext
 					break;
 				
 				case SGL_POLYGON:
-					switch (areaMode)
-					{
-						case SGL_POINT:
-							break;
+					if (sceneDefinition) {
+						// predpokladame ze jde o trojuhelnik
+						raytracer->addPrimitive(new Triangle(vertexBuffer[i++], vertexBuffer[i++], vertexBuffer[i++]));
+					} else {
+						switch (areaMode)
+						{
+							case SGL_POINT:
+								break;
 
-						case SGL_LINE:
-							while(i < size)
-							{
-								u = vertexBuffer[i++];
-								v = vertexBuffer[i];
+							case SGL_LINE:
+								while(i < size)
+								{
+									u = vertexBuffer[i++];
+									v = vertexBuffer[i];
 
-								drawLine(u, v);
-							}
+									drawLine(u, v);
+								}
 
-							drawLine(v, vertexBuffer[0]);
+								drawLine(v, vertexBuffer[0]);
 
-							break;
+								break;
 
-						case SGL_FILL:
-							createEdges();
-							fillElement();
+							case SGL_FILL:
+								createEdges();
+								fillElement();
 
-							break;
+								break;
 
-						default:
-							exit(1);
-							break;
+							default:
+								exit(1);
+								break;
+						}
 					}
 
 					break;
@@ -751,6 +758,17 @@ class sglContext
 			MVP_matrix = P_matrix * MV_matrix;
 
 			MVP_matrixUpdated = true;
+		}
+
+		void beginScene()
+		{
+			sceneDefinition = true;
+			raytracer = new Raytracer();
+		}
+
+		void endScene()
+		{
+			sceneDefinition = false;
 		}
 };
 

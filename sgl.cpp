@@ -760,9 +760,15 @@ void sglDisable(sglEEnableFlags cap)
 // RayTracing oriented functions
 //---------------------------------------------------------------------------
 
-void sglBeginScene() {}
+void sglBeginScene()
+{
+	sglCM->cc->beginScene();
+}
 
-void sglEndScene() {}
+void sglEndScene()
+{
+	sglCM->cc->endScene();
+}
 
 void sglSphere(const float x,
 			   const float y,
