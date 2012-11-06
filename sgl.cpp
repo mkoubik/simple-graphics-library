@@ -776,7 +776,10 @@ void sglEndScene()
 void sglSphere(const float x,
 			   const float y,
 			   const float z,
-			   const float radius) {}
+			   const float radius)
+{
+	sglCM->cc->addSphere(x, y, z, radius);
+}
 
 void sglMaterial(const float r,
 				 const float g,

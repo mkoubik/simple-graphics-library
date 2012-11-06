@@ -32,8 +32,6 @@ class sglContext
 		vector <Edge*> listActualEdges;
 		Raytracer *raytracer;
 
-		bool sceneDefinition;
-
 		inline void drawPoint(const Vertex4f &u)
 		{
 			// Vykresleni bodu dle zadane hodnoty pointSize, kde hodnoty x, y jsou brany
@@ -558,6 +556,8 @@ class sglContext
 		float *depthBuffer;
 		bool depthTestEnabled;
 
+		bool sceneDefinition;
+
 		sglContext(const int &_height, const int &_width)
 		{
 			height = _height;
@@ -760,6 +760,11 @@ class sglContext
 			MVP_matrixUpdated = true;
 		}
 
+		void addSphere(const float x, const float y, const float z, const float radius)
+		{
+			raytracer->addPrimitive(new Sphere(Vertex4f(x, y, z), radius));
+		}
+
 		void beginScene()
 		{
 			sceneDefinition = true;
@@ -773,6 +778,9 @@ class sglContext
 
 		void raytraceScene()
 		{
+			if (!MVP_matrixUpdated)
+				updateMVP_matrix();
+			raytracer->setMVPMatrix(MVP_matrix);
 			raytracer->raytrace(colorBuffer, width, height);
 		}
 };
