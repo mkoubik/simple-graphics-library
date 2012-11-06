@@ -5,6 +5,9 @@
 // Author: Jan Fikar
 //---------------------------------------------------------------------------
 
+#ifndef __CONTEXT_H__
+#define __CONTEXT_H__
+
 #define _USE_MATH_DEFINES
 
 #include <float.h>
@@ -994,3 +997,5 @@ class sglContextManager
 };
 
 int sglContextManager::actualContextIndex = 0;
+
+#endif /* __CONTEXT_H__ */
