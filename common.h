@@ -97,6 +97,16 @@ class Vector4f
 		}
 };
 
+Vector4f operator - (const Vector4f &v1, const Vector4f &v2)
+{
+	return Vector4f(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
+}
+
+Vector4f operator * (const Vector4f &vector, const float &f)
+{
+	return Vector4f(vector.x * f, vector.y * f, vector.z * f);
+}
+
 class Matrix4f
 {
 	public:
@@ -133,6 +143,141 @@ class Matrix4f
 					values[i][j] = matrix[i][j];
 				}
 			}
+		}
+
+		Matrix4f getInversion()
+		{
+			Matrix4f inv = Matrix4f();
+
+			inv.values[0][0] =
+				+ values[1][1] * values[2][2] * values[3][3]
+				- values[1][1] * values[2][3] * values[3][2]
+				- values[2][1] * values[1][2] * values[3][3]
+				+ values[2][1] * values[1][3] * values[3][2]
+				+ values[3][1] * values[1][2] * values[2][3]
+				- values[3][1] * values[1][3] * values[2][2];
+
+			inv.values[0][1] =
+				- values[0][1] * values[2][2] * values[3][3]
+				+ values[0][1] * values[2][3] * values[3][2]
+				+ values[2][1] * values[0][2] * values[3][3]
+				- values[2][1] * values[0][3] * values[3][2]
+				- values[3][1] * values[0][2] * values[2][3]
+				+ values[3][1] * values[0][3] * values[2][2];
+
+			inv.values[0][2] =
+				+ values[0][1] * values[1][2] * values[3][3]
+				- values[0][1] * values[1][3] * values[3][2]
+				- values[1][1] * values[0][2] * values[3][3]
+				+ values[1][1] * values[0][3] * values[3][2]
+				+ values[3][1] * values[0][2] * values[1][3]
+				- values[3][1] * values[0][3] * values[1][2];
+
+			inv.values[0][3] =
+				- values[0][1] * values[1][2] * values[2][3]
+				+ values[0][1] * values[1][3] * values[2][2]
+				+ values[1][1] * values[0][2] * values[2][3]
+				- values[1][1] * values[0][3] * values[2][2]
+				- values[2][1] * values[0][2] * values[1][3]
+				+ values[2][1] * values[0][3] * values[1][2];
+
+			inv.values[1][0] =
+				- values[1][0] * values[2][2] * values[3][3]
+				+ values[1][0] * values[2][3] * values[3][2]
+				+ values[2][0] * values[1][2] * values[3][3]
+				- values[2][0] * values[1][3] * values[3][2]
+				- values[3][0] * values[1][2] * values[2][3]
+				+ values[3][0] * values[1][3] * values[2][2];
+
+			inv.values[1][1] =
+				+ values[0][0] * values[2][2] * values[3][3]
+				- values[0][0] * values[2][3] * values[3][2]
+				- values[2][0] * values[0][2] * values[3][3]
+				+ values[2][0] * values[0][3] * values[3][2]
+				+ values[3][0] * values[0][2] * values[2][3]
+				- values[3][0] * values[0][3] * values[2][2];
+
+			inv.values[1][2] =
+				- values[0][0] * values[1][2] * values[3][3]
+				+ values[0][0] * values[1][3] * values[3][2]
+				+ values[1][0] * values[0][2] * values[3][3]
+				- values[1][0] * values[0][3] * values[3][2]
+				- values[3][0] * values[0][2] * values[1][3]
+				+ values[3][0] * values[0][3] * values[1][2];
+
+			inv.values[1][3] =
+				+ values[0][0] * values[1][2] * values[2][3]
+				- values[0][0] * values[1][3] * values[2][2]
+				- values[1][0] * values[0][2] * values[2][3]
+				+ values[1][0] * values[0][3] * values[2][2]
+				+ values[2][0] * values[0][2] * values[1][3]
+				- values[2][0] * values[0][3] * values[1][2];
+
+			inv.values[2][0] =
+				+ values[1][0] * values[2][1] * values[3][3]
+				- values[1][0] * values[2][3] * values[3][1]
+				- values[2][0] * values[1][1] * values[3][3]
+				+ values[2][0] * values[1][3] * values[3][1]
+				+ values[3][0] * values[1][1] * values[2][3]
+				- values[3][0] * values[1][3] * values[2][1];
+
+			inv.values[2][1] =
+				- values[0][0] * values[2][1] * values[3][3]
+				+ values[0][0] * values[2][3] * values[3][1]
+				+ values[2][0] * values[0][1] * values[3][3]
+				- values[2][0] * values[0][3] * values[3][1]
+				- values[3][0] * values[0][1] * values[2][3]
+				+ values[3][0] * values[0][3] * values[2][1];
+
+			inv.values[2][2] =
+				+ values[0][0] * values[1][1] * values[3][3]
+				- values[0][0] * values[1][3] * values[3][1]
+				- values[1][0] * values[0][1] * values[3][3]
+				+ values[1][0] * values[0][3] * values[3][1]
+				+ values[3][0] * values[0][1] * values[1][3]
+				- values[3][0] * values[0][3] * values[1][1];
+
+			inv.values[2][3] =
+				- values[0][0] * values[1][1] * values[2][3]
+				+ values[0][0] * values[1][3] * values[2][1]
+				+ values[1][0] * values[0][1] * values[2][3]
+				- values[1][0] * values[0][3] * values[2][1]
+				- values[2][0] * values[0][1] * values[1][3]
+				+ values[2][0] * values[0][3] * values[1][1];
+
+			inv.values[3][0] =
+				- values[1][0] * values[2][1] * values[3][2]
+				+ values[1][0] * values[2][2] * values[3][1]
+				+ values[2][0] * values[1][1] * values[3][2]
+				- values[2][0] * values[1][2] * values[3][1]
+				- values[3][0] * values[1][1] * values[2][2]
+				+ values[3][0] * values[1][2] * values[2][1];
+
+			inv.values[3][1] =
+				+ values[0][0] * values[2][1] * values[3][2]
+				- values[0][0] * values[2][2] * values[3][1]
+				- values[2][0] * values[0][1] * values[3][2]
+				+ values[2][0] * values[0][2] * values[3][1]
+				+ values[3][0] * values[0][1] * values[2][2]
+				- values[3][0] * values[0][2] * values[2][1];
+
+			inv.values[3][2] =
+				- values[0][0] * values[1][1] * values[3][2]
+				+ values[0][0] * values[1][2] * values[3][1]
+				+ values[1][0] * values[0][1] * values[3][2]
+				- values[1][0] * values[0][2] * values[3][1]
+				- values[3][0] * values[0][1] * values[1][2]
+				+ values[3][0] * values[0][2] * values[1][1];
+
+			inv.values[3][3] =
+				+ values[0][0] * values[1][1] * values[2][2]
+				- values[0][0] * values[1][2] * values[2][1]
+				- values[1][0] * values[0][1] * values[2][2]
+				+ values[1][0] * values[0][2] * values[2][1]
+				+ values[2][0] * values[0][1] * values[1][2]
+				- values[2][0] * values[0][2] * values[1][1];
+
+			return inv;
 		}
 
 		Matrix4f operator * (const float* matrixArray)
@@ -180,6 +325,7 @@ class Vertex4f
 
 		Vertex4f(void)
 		{
+			x = y = z = w = 0;
 		}
 
 		Vertex4f(const int &_x, const int &_y, const float &_z = 0.0f, const float &_w = 1.0f)
@@ -188,6 +334,16 @@ class Vertex4f
 			y = _y;
 			z = _z;
 			w = _w;
+		}
+
+		Vector4f operator - (const Vertex4f &vector)
+		{
+			Vector4f result;
+			result.x = x - vector.x;
+			result.y = y - vector.y;
+			result.z = z - vector.z;
+			result.w = w - vector.w;
+			return result;
 		}
 };
 
