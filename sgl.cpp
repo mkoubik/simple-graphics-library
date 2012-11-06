@@ -791,7 +791,10 @@ void sglPointLight(const float x,
 				   const float g,
 				   const float b) {}
 
-void sglRayTraceScene() {}
+void sglRayTraceScene()
+{
+	sglCM->cc->raytraceScene();
+}
 
 void sglRasterizeScene() {}
 

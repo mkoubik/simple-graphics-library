@@ -770,6 +770,11 @@ class sglContext
 		{
 			sceneDefinition = false;
 		}
+
+		void raytraceScene()
+		{
+			raytracer->raytrace(colorBuffer, width, height);
+		}
 };
 
 class sglContextManager

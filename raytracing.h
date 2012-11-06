@@ -101,6 +101,16 @@ class Raytracer
 		{
 			primitives.push_back(primitive);
 		}
+
+		void raytrace(Color *colorBuffer, int width, int height)
+		{
+			Color c = Color(0, 1, 0.5);
+			for (int x = 0; x < width; x++) {
+				for (int y = 0; y < height; y++) {
+					colorBuffer[y * width + x] = c;
+				}
+			}
+		}
 };
 
 #endif /* __RAYTRACING_H__ */
