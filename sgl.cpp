@@ -238,9 +238,12 @@ void sglVertex4f(float x, float y, float z, float w)
 
 void sglVertex3f(float x, float y, float z)
 {
-	sglCM->cc->transformationPipeline3D(x, y, z, x_w, y_w, z_w);
-
-	sglCM->cc->vertexBuffer.push_back(Vertex4f(x_w, y_w, z_w));
+	if (sglCM->cc->sceneDefinition) {
+		sglCM->cc->vertexBuffer.push_back(Vertex4f(x, y, z));
+	} else {
+		sglCM->cc->transformationPipeline3D(x, y, z, x_w, y_w, z_w);
+		sglCM->cc->vertexBuffer.push_back(Vertex4f(x_w, y_w, z_w));
+	}
 }
 
 void sglVertex2f(float x, float y)
