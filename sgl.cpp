@@ -788,7 +788,10 @@ void sglMaterial(const float r,
 				 const float ks,
 				 const float shine,
 				 const float T,
-				 const float ior) {}
+				 const float ior)
+{
+	sglCM->cc->setMaterial(r, g, b, kd, ks, shine, T, ior);
+}
 
 void sglPointLight(const float x,
 				   const float y,

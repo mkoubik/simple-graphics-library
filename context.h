@@ -558,6 +558,8 @@ class sglContext
 
 		bool sceneDefinition;
 
+		PhongMaterial *currentMaterial;
+
 		sglContext(const int &_height, const int &_width)
 		{
 			height = _height;
@@ -696,7 +698,7 @@ class sglContext
 				case SGL_POLYGON:
 					if (sceneDefinition) {
 						// predpokladame ze jde o trojuhelnik
-						raytracer->addPrimitive(new Triangle(vertexBuffer[i++], vertexBuffer[i++], vertexBuffer[i++]));
+						raytracer->addPrimitive(new Triangle(currentMaterial, vertexBuffer[i++], vertexBuffer[i++], vertexBuffer[i++]));
 					} else {
 						switch (areaMode)
 						{
@@ -762,7 +764,12 @@ class sglContext
 
 		void addSphere(const float x, const float y, const float z, const float radius)
 		{
-			raytracer->addPrimitive(new Sphere(Vertex4f(x, y, z), radius));
+			raytracer->addPrimitive(new Sphere(currentMaterial, Vertex4f(x, y, z), radius));
+		}
+
+		void setMaterial(const float r, const float g, const float b, const float kd, const float ks, const float shine, const float T, const float ior)
+		{
+			currentMaterial = new PhongMaterial(r, g, b, kd, ks);
 		}
 
 		void beginScene()
@@ -781,6 +788,7 @@ class sglContext
 			if (!MVP_matrixUpdated)
 				updateMVP_matrix();
 			raytracer->setMVPMatrix(MVP_matrix);
+			raytracer->setBackgroundColor(clearColor);
 			raytracer->raytrace(colorBuffer, width, height);
 		}
 };

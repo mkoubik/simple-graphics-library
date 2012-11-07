@@ -19,93 +19,6 @@ class Ray
 		}
 };
 
-class Primitive
-{
-	public:
-		virtual bool findIntersection(Ray *ray, float *distance) = 0;
-		virtual bool getNormal(Vector4f &point) = 0;
-};
-
-class Triangle : public Primitive
-{
-	private:
-		Vertex4f v1, v2, v3;
-
-	public:
-		Triangle(Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
-		{
-			v1 = _v1;
-			v2 = _v2;
-			v3 = _v3;
-		}
-
-		bool findIntersection(Ray *ray, float *distance)
-		{
-			Vector4f e1 = v2 - v1;
-			Vector4f e2 = v3 - v1;
-			Vector4f s1 = ray->direction.crossProduct(e2);
-			float divisor = s1.dotProduct(e1);
-			if (divisor == 0.)
-				return false;
-			float invDivisor = 1.f / divisor;
-			// Compute first barycentric coordinate
-			Vector4f d = ray->origin - v1;
-			float b1 = d.dotProduct(s1) * invDivisor;
-			if (b1 < 0. || b1 > 1.)
-				return false;
-			// Compute second barycentric coordinate
-			Vector4f s2 = d.crossProduct(e1);
-			float b2 = ray->direction.dotProduct(s2) * invDivisor;
-			if (b2 < 0. || b1 + b2 > 1.)
-				return false;
-			// Compute _t_ to intersection point
-			float t = e2.dotProduct(s2) * invDivisor;
-			// if (t < ray.mint || t > ray.maxt)
-			// 	return false;
-			*distance = t;
-			return true;
-		}
-
-		bool getNormal(Vector4f &point)
-		{
-			return false;
-		}
-};
-
-class Sphere : public Primitive
-{
-	private:
-		Vertex4f center;
-		float radius;
-	public:
-		Sphere(Vertex4f _center, const float _radius)
-		{
-			center = _center;
-			radius = _radius;
-		}
-
-	bool findIntersection(Ray *ray, float *distance)
-	{
-		Vector4f dst = ray->origin - center;
-		const float b = dst.dotProduct(ray->direction);
-		const float c = dst.dotProduct(dst) - radius * radius;
-		const float d = b * b - c;
-
-		if (d > 0) {
-			*distance = -b - sqrtf(d);
-			if (*distance < 0.0f)
-				*distance = -b + sqrtf(d);
-			return true;
-		}
-		return false;
-	}
-
-	bool getNormal(Vector4f &point)
-	{
-		return false;
-	}
-};
-
 class PhongMaterial
 {
 	public:
@@ -151,20 +64,119 @@ class PointLight
 		}
 };
 
+class Primitive
+{
+	public:
+		PhongMaterial *material;
+		virtual bool findIntersection(Ray *ray, float *distance) = 0;
+		virtual bool getNormal(Vector4f &point) = 0;
+};
+
+class Triangle : public Primitive
+{
+	private:
+		Vertex4f v1, v2, v3;
+
+	public:
+		Triangle(PhongMaterial *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
+		{
+			material = _material;
+			v1 = _v1;
+			v2 = _v2;
+			v3 = _v3;
+		}
+
+		bool findIntersection(Ray *ray, float *distance)
+		{
+			Vector4f e1 = v2 - v1;
+			Vector4f e2 = v3 - v1;
+			Vector4f s1 = ray->direction.crossProduct(e2);
+			float divisor = s1.dotProduct(e1);
+			if (divisor == 0.)
+				return false;
+			float invDivisor = 1.f / divisor;
+			// Compute first barycentric coordinate
+			Vector4f d = ray->origin - v1;
+			float b1 = d.dotProduct(s1) * invDivisor;
+			if (b1 < 0. || b1 > 1.)
+				return false;
+			// Compute second barycentric coordinate
+			Vector4f s2 = d.crossProduct(e1);
+			float b2 = ray->direction.dotProduct(s2) * invDivisor;
+			if (b2 < 0. || b1 + b2 > 1.)
+				return false;
+			// Compute _t_ to intersection point
+			float t = e2.dotProduct(s2) * invDivisor;
+			// if (t < ray.mint || t > ray.maxt)
+			// 	return false;
+			*distance = t;
+			return true;
+		}
+
+		bool getNormal(Vector4f &point)
+		{
+			return false;
+		}
+};
+
+class Sphere : public Primitive
+{
+	private:
+		Vertex4f center;
+		float radius;
+	public:
+		Sphere(PhongMaterial *_material, Vertex4f _center, const float _radius)
+		{
+			material = _material;
+			center = _center;
+			radius = _radius;
+		}
+
+	bool findIntersection(Ray *ray, float *distance)
+	{
+		Vector4f dst = ray->origin - center;
+		const float b = dst.dotProduct(ray->direction);
+		const float c = dst.dotProduct(dst) - radius * radius;
+		const float d = b * b - c;
+
+		if (d > 0) {
+			*distance = -b - sqrtf(d);
+			if (*distance < 0.0f)
+				*distance = -b + sqrtf(d);
+			return true;
+		}
+		return false;
+	}
+
+	bool getNormal(Vector4f &point)
+	{
+		return false;
+	}
+};
+
 class Raytracer
 {
 	private:
 		vector<Primitive*> primitives;
 		Matrix4f invertedMatrix;
+		Color backgroundColor;
 
 		Color castRay(Ray ray)
 		{
 			float distance = 0.0f;
+			float minDistance = FLT_MAX;
+			Primitive *nearest = 0;
 			for (int i = 0; i < (int) primitives.size(); i++) {
-				if (primitives[i]->findIntersection(&ray, &distance))
-					return Color(0.8, 0.8, 0.8);
+				if (primitives[i]->findIntersection(&ray, &distance)) {
+					if (distance < minDistance) {
+						minDistance = distance;
+						nearest = primitives[i];
+					}
+				}
 			}
-			return Color(0.2, 0.2, 0.2);
+			if (nearest)
+				return Color(nearest->material->r, nearest->material->g, nearest->material->b);
+			return backgroundColor;
 		}
 
 	public:
@@ -176,6 +188,11 @@ class Raytracer
 		void setMVPMatrix(Matrix4f matrix)
 		{
 			invertedMatrix = matrix.getInversion();
+		}
+
+		void setBackgroundColor(Color color)
+		{
+			backgroundColor = color;
 		}
 
 		void raytrace(Color *colorBuffer, int width, int height)
