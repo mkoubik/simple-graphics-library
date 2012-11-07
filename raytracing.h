@@ -50,7 +50,7 @@ class Triangle : public Primitive
 			float invDivisor = 1.f / divisor;
 			// Compute first barycentric coordinate
 			Vector4f d = ray->origin - v1;
-			float b1 = ray->direction.dotProduct(s1) * invDivisor;
+			float b1 = d.dotProduct(s1) * invDivisor;
 			if (b1 < 0. || b1 > 1.)
 				return false;
 			// Compute second barycentric coordinate
