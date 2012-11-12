@@ -158,6 +158,7 @@ class Raytracer
 {
 	private:
 		vector<Primitive*> primitives;
+		vector<PointLight*> pointLights;
 		Matrix4f invertedMatrix;
 		Color backgroundColor;
 
@@ -185,6 +186,10 @@ class Raytracer
 			primitives.push_back(primitive);
 		}
 
+		void addPointLight(PointLight *light)
+		{
+			pointLights.push_back(light);
+		}
 		void setMVPMatrix(Matrix4f matrix)
 		{
 			invertedMatrix = matrix.getInversion();

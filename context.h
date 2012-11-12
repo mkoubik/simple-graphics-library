@@ -767,6 +767,11 @@ class sglContext
 			raytracer->addPrimitive(new Sphere(currentMaterial, Vertex4f(x, y, z), radius));
 		}
 
+		void addPointLight(const float x, const float y, const float z, const float r, const float g, const float b)
+		{
+			raytracer->addPointLight(new PointLight(x, y, z, r, g, b));
+		}
+
 		void setMaterial(const float r, const float g, const float b, const float kd, const float ks, const float shine, const float T, const float ior)
 		{
 			currentMaterial = new Material(r, g, b, kd, ks);

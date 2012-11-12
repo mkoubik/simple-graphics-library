@@ -798,7 +798,10 @@ void sglPointLight(const float x,
 				   const float z,
 				   const float r,
 				   const float g,
-				   const float b) {}
+				   const float b)
+{
+	sglCM->cc->addPointLight(x, y, z, r, g, b);
+}
 
 void sglRayTraceScene()
 {
