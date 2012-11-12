@@ -19,12 +19,12 @@ class Ray
 		}
 };
 
-class PhongMaterial
+class Material
 {
 	public:
 		float r, g, b, kd, ks, shine, t, ior;
 
-		PhongMaterial(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks)
+		Material(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks)
 		{
 			r = _r;
 			g = _g;
@@ -33,7 +33,7 @@ class PhongMaterial
 			ks = _ks;
 		}
 
-		PhongMaterial(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks,
+		Material(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks,
 			const float &_shine, const float &_t, const float &_ior)
 		{
 			r = _r;
@@ -67,7 +67,7 @@ class PointLight
 class Primitive
 {
 	public:
-		PhongMaterial *material;
+		Material *material;
 		virtual bool findIntersection(Ray *ray, float *distance) = 0;
 		virtual bool getNormal(Vector4f &point) = 0;
 };
@@ -78,7 +78,7 @@ class Triangle : public Primitive
 		Vertex4f v1, v2, v3;
 
 	public:
-		Triangle(PhongMaterial *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
+		Triangle(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
 		{
 			material = _material;
 			v1 = _v1;
@@ -125,7 +125,7 @@ class Sphere : public Primitive
 		Vertex4f center;
 		float radius;
 	public:
-		Sphere(PhongMaterial *_material, Vertex4f _center, const float _radius)
+		Sphere(Material *_material, Vertex4f _center, const float _radius)
 		{
 			material = _material;
 			center = _center;

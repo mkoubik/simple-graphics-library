@@ -558,7 +558,7 @@ class sglContext
 
 		bool sceneDefinition;
 
-		PhongMaterial *currentMaterial;
+		Material *currentMaterial;
 
 		sglContext(const int &_height, const int &_width)
 		{
@@ -769,7 +769,7 @@ class sglContext
 
 		void setMaterial(const float r, const float g, const float b, const float kd, const float ks, const float shine, const float T, const float ior)
 		{
-			currentMaterial = new PhongMaterial(r, g, b, kd, ks);
+			currentMaterial = new Material(r, g, b, kd, ks);
 		}
 
 		void beginScene()
