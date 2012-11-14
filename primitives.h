@@ -18,11 +18,8 @@ class Primitive
 
 class Triangle : public Primitive
 {
-	private:
+	protected:
 		Vertex4f v1, v2, v3;
-		Vector4f origin;
-		Vector4f e1, e2;
-		Vector4f normal;
 
 	public:
 		Triangle(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
@@ -31,7 +28,19 @@ class Triangle : public Primitive
 			v1 = _v1;
 			v2 = _v2;
 			v3 = _v3;
+		}
+};
 
+class TriangleBarycentric : public Triangle
+{
+	private:
+		Vector4f origin;
+		Vector4f e1, e2;
+		Vector4f normal;
+
+	public:
+		TriangleBarycentric(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3) : Triangle(_material, _v1, _v2, _v3)
+		{
 			origin = Vector4f(v1.x, v1.y, v1.z);
 
 			e1 = v2 - v1;

@@ -13,6 +13,8 @@
 // #define REFLECTION_MODEL (new DummyModel())
 #define REFLECTION_MODEL (new PhongModel())
 
+#define TRIANGLE_IMPLEMENTATION TriangleBarycentric
+
 #include <float.h>
 #include <limits.h>
 #include <math.h>
@@ -701,7 +703,7 @@ class sglContext
 				case SGL_POLYGON:
 					if (sceneDefinition) {
 						// predpokladame ze jde o trojuhelnik
-						raytracer->addPrimitive(new Triangle(currentMaterial, vertexBuffer[i++], vertexBuffer[i++], vertexBuffer[i++]));
+						raytracer->addPrimitive(new TRIANGLE_IMPLEMENTATION (currentMaterial, vertexBuffer[i++], vertexBuffer[i++], vertexBuffer[i++]));
 					} else {
 						switch (areaMode)
 						{
