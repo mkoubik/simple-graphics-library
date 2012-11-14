@@ -45,14 +45,17 @@ class PhongModel : public ReflectionModel
 				Vector4f l = light->position - *intersection;
 				l.normalize();
 
-				float diffI = normal.dotProduct(l) * primitive->material->kd;
-				diffuse = diffuse + ((light->color * primitive->material->color) * diffI);
+				if (primitive->material->kd > 0) {
+					float diffI = normal.dotProduct(l) * primitive->material->kd;
+					diffuse += ((light->color * primitive->material->color) * diffI);
+				}
 
-				Vector4f half = (l - ray->direction) * 0.5;
-				half.normalize();
-
-				float specI = powf(normal.dotProduct(half), primitive->material->shine * 4) * primitive->material->ks;
-				specular = specular + (light->color * specI);
+				if (primitive->material->ks > 0) {
+					Vector4f half = (l - ray->direction) * 0.5;
+					half.normalize();
+					float specI = powf(normal.dotProduct(half), primitive->material->shine * 4) * primitive->material->ks;
+					specular += (light->color * specI);
+				}
 			}
 			return ambient + diffuse + specular;
 		}

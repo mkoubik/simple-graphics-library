@@ -48,6 +48,13 @@ class Color
 		{
 			return Color(k * r, k * g, k * b);
 		}
+
+		void operator+= (const Color &color)
+		{
+			r += color.r;
+			g += color.g;
+			b += color.b;
+		}
 };
 
 class Edge
