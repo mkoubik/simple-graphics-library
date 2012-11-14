@@ -20,6 +20,8 @@ class Triangle : public Primitive
 {
 	protected:
 		Vertex4f v1, v2, v3;
+		Vector4f e1, e2;
+		Vector4f normal;
 
 	public:
 		Triangle(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
@@ -28,6 +30,16 @@ class Triangle : public Primitive
 			v1 = _v1;
 			v2 = _v2;
 			v3 = _v3;
+
+			e1 = v2 - v1;
+			e2 = v3 - v1;
+			normal = e1.crossProduct(e2);
+			normal.normalize();
+		}
+
+		Vector4f getNormal()
+		{
+			return normal;
 		}
 };
 
@@ -35,19 +47,11 @@ class TriangleBarycentric : public Triangle
 {
 	private:
 		Vector4f origin;
-		Vector4f e1, e2;
-		Vector4f normal;
 
 	public:
 		TriangleBarycentric(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3) : Triangle(_material, _v1, _v2, _v3)
 		{
 			origin = Vector4f(v1.x, v1.y, v1.z);
-
-			e1 = v2 - v1;
-			e2 = v3 - v1;
-			normal = e1.crossProduct(e2);
-
-			normal.normalize();
 		}
 
 		bool findIntersection(Ray *ray, float *distance, Vector4f *intersection)
@@ -79,10 +83,59 @@ class TriangleBarycentric : public Triangle
 			*distance = t;
 			return true;
 		}
+};
 
-		Vector4f getNormal()
+class Plane
+{
+	public:
+		Vertex4f point;
+		Vector4f normal;
+
+		Plane() {}
+
+		Plane(Vertex4f _point, Vector4f _normal)
 		{
-			return normal;
+			point = _point;
+			normal = _normal;
+		}
+
+		void findIntersection(Ray *ray, float *distance, Vector4f *intersection)
+		{
+			*distance = (normal.dotProduct(point - ray->origin)) / normal.dotProduct(ray->direction);
+			Vector4f _intersection = ray->origin + (ray->direction * *distance);
+			intersection->x = _intersection.x;
+			intersection->y = _intersection.y;
+			intersection->z = _intersection.z;
+		}
+};
+
+class TrianglePlucker : public Triangle
+{
+	private:
+		PluckerEdge e1, e2, e3;
+	public:
+		Plane plane;
+
+		TrianglePlucker(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3) : Triangle(_material, _v1, _v2, _v3)
+		{
+			e1 = PluckerEdge(v1, v2);
+			e2 = PluckerEdge(v2, v3);
+			e3 = PluckerEdge(v3, v1);
+			plane = Plane(v1, normal);
+		}
+
+		bool findIntersection(Ray *ray, float *distance, Vector4f *intersection)
+		{
+			// prusecik existuje prave tehdy, pokud paprsek miji vsechny hrany zleva, nebo vsechny zprava (nebo pokud nekterou protina)
+			bool side1 = (ray->getPlucker()->side(e1) >= 0);
+			bool side2 = (ray->getPlucker()->side(e2) >= 0);
+			if (side1 != side2)
+				return false;
+			bool side3 = (ray->getPlucker()->side(e3) >= 0);
+			if (side1 != side3)
+				return false;
+			plane.findIntersection(ray, distance, intersection);
+			return true;
 		}
 };
 

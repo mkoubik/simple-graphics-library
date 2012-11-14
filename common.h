@@ -466,8 +466,51 @@ Vector4f operator * (const Matrix4f &matrix, const Vector4f &v)
 	return result;
 }
 
+class PluckerEdge
+{
+	public:
+		// Plucker coordinates
+		float pi0, pi1, pi2, pi3, pi4, pi5;
+
+		PluckerEdge() {}
+
+		// Prevzato z "Ray Tracing Triangular Meshes" -- John Amanatides, Kin Choi
+		PluckerEdge(Vertex4f from, Vertex4f to)
+		{
+			pi0 = from.x * to.y - to.x * from.y;
+			pi1 = from.x * to.z - to.x * from.z;
+			pi2 = from.x - to.x;
+			pi3 = from.y * to.z - to.y * from.z;
+			pi4 = from.z - to.z;
+			pi5 = to.y - from.y;
+		}
+
+		// Prevzato z "Ray Tracing Triangular Meshes" -- John Amanatides, Kin Choi
+		PluckerEdge(Vector4f from, Vector4f to)
+		{
+			pi0 = from.x * to.y - to.x * from.y;
+			pi1 = from.x * to.z - to.x * from.z;
+			pi2 = from.x - to.x;
+			pi3 = from.y * to.z - to.y * from.z;
+			pi4 = from.z - to.z;
+			pi5 = to.y - from.y;
+		}
+
+		// Prevzato z "Ray Tracing Triangular Meshes" -- John Amanatides, Kin Choi
+		// vraci:
+		// 		0 pokud jsou koplanarni
+		// 		>0 pokud jsou mimobezne a miji se po smeru hodinovych rucicek
+		// 		<0 pokud jsou mimobezne a miji se proti smeru hodinovych rucicek
+		float side(PluckerEdge edge)
+		{
+			return pi0 * edge.pi4 + pi1 * edge.pi5 + pi2 * edge.pi3 + pi4 * edge.pi0 + pi5 * edge.pi1 + pi3 * edge.pi2;
+		}
+};
+
 class Ray
 {
+	private:
+		PluckerEdge *plucker;
 	public:
 		Vector4f origin, direction;
 
@@ -475,6 +518,15 @@ class Ray
 		{
 			origin = _origin;
 			direction = _direction;
+			plucker = 0;
+		}
+
+		PluckerEdge *getPlucker()
+		{
+			if (plucker == 0) {
+				plucker = new PluckerEdge(origin, origin + direction);
+			}
+			return plucker;
 		}
 };
 

@@ -13,7 +13,8 @@
 // #define REFLECTION_MODEL (new DummyModel())
 #define REFLECTION_MODEL (new PhongModel())
 
-#define TRIANGLE_IMPLEMENTATION TriangleBarycentric
+// #define TRIANGLE_IMPLEMENTATION TriangleBarycentric
+#define TRIANGLE_IMPLEMENTATION TrianglePlucker
 
 #include <float.h>
 #include <limits.h>
