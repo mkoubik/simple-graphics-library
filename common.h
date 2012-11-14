@@ -443,4 +443,68 @@ Vector4f operator * (const Matrix4f &matrix, const Vector4f &v)
 	return result;
 }
 
+class Ray
+{
+	public:
+		Vector4f origin, direction;
+
+		Ray(Vector4f &_origin, Vector4f &_direction)
+		{
+			origin = _origin;
+			direction = _direction;
+		}
+};
+
+class Material
+{
+	public:
+		float r, g, b, kd, ks, shine, t, ior;
+		Color color;
+
+		Material(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks)
+		{
+			r = _r;
+			g = _g;
+			b = _b;
+			kd = _kd;
+			ks = _ks;
+			color = Color(r, g, b);
+		}
+
+		Material(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks,
+			const float &_shine, const float &_t, const float &_ior)
+		{
+			r = _r;
+			g = _g;
+			b = _b;
+			kd = _kd;
+			ks = _ks;
+			shine = _shine;
+			t = _t;
+			ior = _ior;
+			color = Color(r, g, b);
+		}
+};
+
+class PointLight
+{
+	public:
+		float x, y, z;
+		float r, g, b;
+		Vertex4f position;
+		Color color;
+
+		PointLight(const float &_x, const float &_y, const float &_z, const float &_r, const float &_g, const float &_b)
+		{
+			x = _x;
+			y = _y;
+			z = _z;
+			r = _r;
+			g = _g;
+			b = _b;
+			position = Vertex4f(x, y, z);
+			color = Color(r, g, b);
+		}
+};
+
 #endif /* __COMMON_H__*/
