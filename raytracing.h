@@ -83,9 +83,9 @@ class Triangle : public Primitive
 {
 	private:
 		Vertex4f v1, v2, v3;
+		Vector4f origin;
 		Vector4f e1, e2;
 		Vector4f normal;
-		Ray *lastRay;
 
 	public:
 		Triangle(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
@@ -94,6 +94,8 @@ class Triangle : public Primitive
 			v1 = _v1;
 			v2 = _v2;
 			v3 = _v3;
+
+			origin = Vector4f(v1.x, v1.y, v1.z);
 
 			e1 = v2 - v1;
 			e2 = v3 - v1;
@@ -104,7 +106,6 @@ class Triangle : public Primitive
 
 		bool findIntersection(Ray *ray, float *distance, Vector4f *intersection)
 		{
-			lastRay = ray;
 			Vector4f s1 = ray->direction.crossProduct(e2);
 			float divisor = s1.dotProduct(e1);
 			if (divisor == 0.)
@@ -125,7 +126,7 @@ class Triangle : public Primitive
 			// if (t < ray.mint || t > ray.maxt)
 			// 	return false;
 
-			Vector4f _intersection = e1 * b1 + e2 * b2 + Vector4f(v1.x, v1.y, v1.z);
+			Vector4f _intersection = e1 * b1 + e2 * b2 + origin;
 			intersection->x = _intersection.x;
 			intersection->y = _intersection.y;
 			intersection->z = _intersection.z;
@@ -179,8 +180,7 @@ class Sphere : public Primitive
 
 	Vector4f getNormal()
 	{
-		// Vector4f normal = lastRayIntersection - center;
-		Vector4f normal = Vector4f(lastRayIntersection.x, lastRayIntersection.y, lastRayIntersection.z);
+		Vector4f normal = (lastRayIntersection - center);
 		normal.normalize();
 		return normal;
 	}
