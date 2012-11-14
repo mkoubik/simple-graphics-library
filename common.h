@@ -33,6 +33,21 @@ class Color
 			g = _g;
 			b = _b;
 		}
+
+		Color operator+ (const Color &color)
+		{
+			return Color(r + color.r, g + color.g, b + color.b);
+		}
+
+		Color operator* (const Color &color)
+		{
+			return Color(r * color.r, g * color.g, b * color.b);
+		}
+
+		Color operator* (const float &k)
+		{
+			return Color(k * r, k * g, k * b);
+		}
 };
 
 class Edge
@@ -111,7 +126,20 @@ class Vector4f
 			result.z = x * vector.y - y * vector.x;
 			return result;
 		}
+
+		void normalize()
+		{
+			float invSize = 1 / sqrtf(x * x + y * y + z * z);
+			x = x * invSize;
+			y = y * invSize;
+			z = z * invSize;
+		}
 };
+
+Vector4f operator + (const Vector4f &v1, const Vector4f &v2)
+{
+	return Vector4f(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
+}
 
 Vector4f operator - (const Vector4f &v1, const Vector4f &v2)
 {
@@ -359,6 +387,26 @@ class Vertex4f
 			result.y = y - vector.y;
 			result.z = z - vector.z;
 			result.w = w - vector.w;
+			return result;
+		}
+
+		Vector4f operator - (const Vector4f &vector)
+		{
+			Vector4f result;
+			result.x = x - vector.x;
+			result.y = y - vector.y;
+			result.z = z - vector.z;
+			result.w = w - vector.w;
+			return result;
+		}
+
+		Vertex4f operator + (const Vector4f &vector)
+		{
+			Vertex4f result;
+			result.x = x + vector.x;
+			result.y = y + vector.y;
+			result.z = z + vector.z;
+			result.w = w + vector.w;
 			return result;
 		}
 };

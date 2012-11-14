@@ -10,6 +10,9 @@
 
 #define _USE_MATH_DEFINES
 
+// #define REFLECTION_MODEL (new DummyModel())
+#define REFLECTION_MODEL (new PhongModel())
+
 #include <float.h>
 #include <limits.h>
 #include <math.h>
@@ -774,13 +777,13 @@ class sglContext
 
 		void setMaterial(const float r, const float g, const float b, const float kd, const float ks, const float shine, const float T, const float ior)
 		{
-			currentMaterial = new Material(r, g, b, kd, ks);
+			currentMaterial = new Material(r, g, b, kd, ks, shine, T, ior);
 		}
 
 		void beginScene()
 		{
 			sceneDefinition = true;
-			raytracer = new Raytracer();
+			raytracer = new Raytracer( REFLECTION_MODEL );
 		}
 
 		void endScene()

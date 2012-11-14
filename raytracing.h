@@ -23,6 +23,7 @@ class Material
 {
 	public:
 		float r, g, b, kd, ks, shine, t, ior;
+		Color color;
 
 		Material(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks)
 		{
@@ -31,6 +32,7 @@ class Material
 			b = _b;
 			kd = _kd;
 			ks = _ks;
+			color = Color(r, g, b);
 		}
 
 		Material(const float &_r, const float &_g, const float &_b, const float &_kd, const float &_ks,
@@ -44,6 +46,7 @@ class Material
 			shine = _shine;
 			t = _t;
 			ior = _ior;
+			color = Color(r, g, b);
 		}
 };
 
@@ -52,6 +55,8 @@ class PointLight
 	public:
 		float x, y, z;
 		float r, g, b;
+		Vertex4f position;
+		Color color;
 
 		PointLight(const float &_x, const float &_y, const float &_z, const float &_r, const float &_g, const float &_b)
 		{
@@ -61,6 +66,8 @@ class PointLight
 			r = _r;
 			g = _g;
 			b = _b;
+			position = Vertex4f(x, y, z);
+			color = Color(r, g, b);
 		}
 };
 
@@ -68,14 +75,17 @@ class Primitive
 {
 	public:
 		Material *material;
-		virtual bool findIntersection(Ray *ray, float *distance) = 0;
-		virtual bool getNormal(Vector4f &point) = 0;
+		virtual bool findIntersection(Ray *ray, float *distance, Vector4f *intersection) = 0;
+		virtual Vector4f getNormal() = 0;
 };
 
 class Triangle : public Primitive
 {
 	private:
 		Vertex4f v1, v2, v3;
+		Vector4f e1, e2;
+		Vector4f normal;
+		Ray *lastRay;
 
 	public:
 		Triangle(Material *_material, Vertex4f &_v1, Vertex4f &_v2, Vertex4f &_v3)
@@ -84,12 +94,17 @@ class Triangle : public Primitive
 			v1 = _v1;
 			v2 = _v2;
 			v3 = _v3;
+
+			e1 = v2 - v1;
+			e2 = v3 - v1;
+			normal = e1.crossProduct(e2);
+
+			normal.normalize();
 		}
 
-		bool findIntersection(Ray *ray, float *distance)
+		bool findIntersection(Ray *ray, float *distance, Vector4f *intersection)
 		{
-			Vector4f e1 = v2 - v1;
-			Vector4f e2 = v3 - v1;
+			lastRay = ray;
 			Vector4f s1 = ray->direction.crossProduct(e2);
 			float divisor = s1.dotProduct(e1);
 			if (divisor == 0.)
@@ -109,13 +124,18 @@ class Triangle : public Primitive
 			float t = e2.dotProduct(s2) * invDivisor;
 			// if (t < ray.mint || t > ray.maxt)
 			// 	return false;
+
+			Vector4f _intersection = e1 * b1 + e2 * b2 + Vector4f(v1.x, v1.y, v1.z);
+			intersection->x = _intersection.x;
+			intersection->y = _intersection.y;
+			intersection->z = _intersection.z;
 			*distance = t;
 			return true;
 		}
 
-		bool getNormal(Vector4f &point)
+		Vector4f getNormal()
 		{
-			return false;
+			return normal;
 		}
 };
 
@@ -124,6 +144,7 @@ class Sphere : public Primitive
 	private:
 		Vertex4f center;
 		float radius;
+		Vector4f lastRayIntersection;
 	public:
 		Sphere(Material *_material, Vertex4f _center, const float _radius)
 		{
@@ -132,7 +153,7 @@ class Sphere : public Primitive
 			radius = _radius;
 		}
 
-	bool findIntersection(Ray *ray, float *distance)
+	bool findIntersection(Ray *ray, float *distance, Vector4f *intersection)
 	{
 		Vector4f dst = ray->origin - center;
 		const float b = dst.dotProduct(ray->direction);
@@ -143,15 +164,75 @@ class Sphere : public Primitive
 			*distance = -b - sqrtf(d);
 			if (*distance < 0.0f)
 				*distance = -b + sqrtf(d);
+
+			Vector4f _intersection = ray->origin + (ray->direction * *distance);
+			intersection->x = _intersection.x;
+			intersection->y = _intersection.y;
+			intersection->z = _intersection.z;
+
+			// ulozeni pruseciku pro budouci pouziti v getNormal()
+			lastRayIntersection = *intersection;
 			return true;
 		}
 		return false;
 	}
 
-	bool getNormal(Vector4f &point)
+	Vector4f getNormal()
 	{
-		return false;
+		// Vector4f normal = lastRayIntersection - center;
+		Vector4f normal = Vector4f(lastRayIntersection.x, lastRayIntersection.y, lastRayIntersection.z);
+		normal.normalize();
+		return normal;
 	}
+};
+
+class ReflectionModel
+{
+	protected:
+		vector<PointLight*> *pointLights;
+
+	public:
+		virtual Color getColor(Primitive *primitive, Ray *ray, Vector4f *intersection) = 0;
+
+		void setPointLights(vector<PointLight*> *_pointLights)
+		{
+			pointLights = _pointLights;
+		}
+};
+
+class DummyModel : public ReflectionModel
+{
+	public:
+		Color getColor(Primitive *primitive, Ray *ray, Vector4f *intersection)
+		{
+			return primitive->material->color;
+		}
+};
+
+class PhongModel : public ReflectionModel
+{
+	public:
+		Color getColor(Primitive *primitive, Ray *ray, Vector4f *intersection)
+		{
+			Vector4f normal = primitive->getNormal();
+			Color ambient = Color(0, 0, 0);
+			Color diffuse = Color(0, 0, 0);
+			Color specular = Color(0, 0, 0);
+			for (int i = 0; i < (int) pointLights->size(); i++) {
+				PointLight *light = (*pointLights)[i];
+				Vector4f l = light->position - *intersection;
+				l.normalize();
+
+				float diffI = normal.dotProduct(l) * primitive->material->kd;
+				diffuse = diffuse + ((light->color * primitive->material->color) * diffI);
+
+				Vector4f half = (l - ray->direction) * 0.5;
+				half.normalize();
+				float specI = powf(normal.dotProduct(half), primitive->material->shine * 4) * primitive->material->ks;
+				specular = specular + (light->color * specI);
+			}
+			return ambient + diffuse + specular;
+		}
 };
 
 class Raytracer
@@ -161,26 +242,36 @@ class Raytracer
 		vector<PointLight*> pointLights;
 		Matrix4f invertedMatrix;
 		Color backgroundColor;
+		ReflectionModel *model;
 
 		Color castRay(Ray ray)
 		{
 			float distance = 0.0f;
 			float minDistance = FLT_MAX;
 			Primitive *nearest = 0;
+			Vector4f intersection, nearestIntersection;
 			for (int i = 0; i < (int) primitives.size(); i++) {
-				if (primitives[i]->findIntersection(&ray, &distance)) {
+				if (primitives[i]->findIntersection(&ray, &distance, &intersection)) {
 					if (distance < minDistance) {
 						minDistance = distance;
 						nearest = primitives[i];
+						nearestIntersection = intersection;
 					}
 				}
 			}
 			if (nearest)
-				return Color(nearest->material->r, nearest->material->g, nearest->material->b);
+				return model->getColor(nearest, &ray, &nearestIntersection);
+				// return Color(nearest->material->r, nearest->material->g, nearest->material->b);
 			return backgroundColor;
 		}
 
 	public:
+		Raytracer(ReflectionModel *_model)
+		{
+			model = _model;
+			model->setPointLights(&pointLights);
+		}
+
 		void addPrimitive(Primitive *primitive)
 		{
 			primitives.push_back(primitive);
@@ -190,6 +281,7 @@ class Raytracer
 		{
 			pointLights.push_back(light);
 		}
+
 		void setMVPMatrix(Matrix4f matrix)
 		{
 			invertedMatrix = matrix.getInversion();
