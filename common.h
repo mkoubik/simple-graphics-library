@@ -55,6 +55,22 @@ class Color
 			g += color.g;
 			b += color.b;
 		}
+
+		float getDifference(Color *color)
+		{
+			return powf(color->g - g, 2) + powf(color->g - g, 2) + powf(color->b - b, 2);
+		}
+
+		float getMaxDifference(vector<Color*> colors)
+		{
+			float max = 0;
+			float tmp = 0;
+			for (int i = 0; i < (int) colors.size(); i++) {
+				tmp = getDifference(colors[i]);
+				if (tmp > max) max = tmp;
+			}
+			return max;
+		}
 };
 
 class Edge
